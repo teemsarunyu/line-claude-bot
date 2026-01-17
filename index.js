@@ -123,7 +123,7 @@ async function getClaudeResponse(userMessage) {
 // ==================== Server ====================
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server is running on port ${PORT}`);
-  console.log(`📝 Webhook URL will be: https://YOUR_DOMAIN/webhook`);
+  console.log(`🌐 Listening on 0.0.0.0:${PORT}`);
 });
