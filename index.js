@@ -45,19 +45,31 @@ app.get('/', (req, res) => {
   res.send('LINE Bot is running!');
 });
 
-app.post('/webhook', line.middleware(lineConfig), async (req, res) => {
+// Webhook with better error handling
+app.post('/webhook', (req, res, next) => {
+  line.middleware(lineConfig)(req, res, (err) => {
+    if (err) {
+      console.error('❌ Middleware error:', err.message);
+      // Return 200 to prevent LINE from retrying
+      return res.status(200).json({ error: err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     const events = req.body.events;
     
     // Handle webhook verification (empty events)
     if (!events || events.length === 0) {
+      console.log('✅ Webhook verified successfully!');
       return res.status(200).json({ success: true });
     }
 
+    console.log(`📩 Received ${events.length} event(s)`);
     await Promise.all(events.map(handleEvent));
     res.json({ success: true });
   } catch (err) {
-    console.error('Webhook error:', err);
+    console.error('❌ Webhook error:', err);
     res.status(500).end();
   }
 });
