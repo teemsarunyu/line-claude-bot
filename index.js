@@ -47,7 +47,14 @@ app.get('/', (req, res) => {
 
 app.post('/webhook', line.middleware(lineConfig), async (req, res) => {
   try {
-    await Promise.all(req.body.events.map(handleEvent));
+    const events = req.body.events;
+    
+    // Handle webhook verification (empty events)
+    if (!events || events.length === 0) {
+      return res.status(200).json({ success: true });
+    }
+
+    await Promise.all(events.map(handleEvent));
     res.json({ success: true });
   } catch (err) {
     console.error('Webhook error:', err);
@@ -67,15 +74,16 @@ async function handleEvent(event) {
 
   try {
     const response = await getClaudeResponse(userMessage);
-    return client.replyMessage(event.replyToken, {
-      type: 'text',
-      text: response,
+    // LINE SDK v8+ uses new API format
+    return client.replyMessage({
+      replyToken: event.replyToken,
+      messages: [{ type: 'text', text: response }],
     });
   } catch (error) {
     console.error('Error calling Claude API:', error);
-    return client.replyMessage(event.replyToken, {
-      type: 'text',
-      text: ERROR_MESSAGE,
+    return client.replyMessage({
+      replyToken: event.replyToken,
+      messages: [{ type: 'text', text: ERROR_MESSAGE }],
     });
   }
 }
