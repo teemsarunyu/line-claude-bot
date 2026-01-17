@@ -1,3 +1,4 @@
+// Load .env file only if it exists (for local development)
 require('dotenv').config();
 
 const express = require('express');
