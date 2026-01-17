@@ -1,11 +1,8 @@
+require('dotenv').config();
+
 const express = require('express');
 const line = require('@line/bot-sdk');
-const Anthropic = require('@anthropic-ai/sdk');
-
-// Load .env only in development
-if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config();
-}
+const Anthropic = require('@anthropic-ai/sdk').default;
 
 const app = express();
 
@@ -21,12 +18,15 @@ const lineConfig = {
   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN
 };
 
-// Claude Configuration - สร้าง instance ที่นี่!
+// Claude Configuration
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
 });
 
-const client = new line.Client(lineConfig);
+// LINE Messaging API Client (SDK v9+)
+const client = new line.messagingApi.MessagingApiClient({
+  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN
+});
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -71,10 +71,10 @@ async function handleEvent(event) {
     const replyText = response.content[0].text;
     console.log('🤖 Claude response:', replyText);
 
-    // ตอบกลับผ่าน LINE
-    return client.replyMessage(event.replyToken, {
-      type: 'text',
-      text: replyText
+    // ตอบกลับผ่าน LINE (SDK v9+ format)
+    return client.replyMessage({
+      replyToken: event.replyToken,
+      messages: [{ type: 'text', text: replyText }]
     });
 
   } catch (error) {
@@ -82,9 +82,9 @@ async function handleEvent(event) {
     console.error('❌ Error details:', error);
     
     // ส่งข้อความ error กลับไปยัง user
-    return client.replyMessage(event.replyToken, {
-      type: 'text',
-      text: 'ขออภัยครับ เกิดข้อผิดพลาดในการประมวลผล กรุณาลองใหม่อีกครั้ง 🙏'
+    return client.replyMessage({
+      replyToken: event.replyToken,
+      messages: [{ type: 'text', text: 'ขออภัยครับ เกิดข้อผิดพลาดในการประมวลผล กรุณาลองใหม่อีกครั้ง 🙏' }]
     });
   }
 }
