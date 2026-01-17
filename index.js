@@ -7,6 +7,17 @@ const Anthropic = require('@anthropic-ai/sdk');
 
 const app = express();
 
+// ==================== Check Required Environment Variables ====================
+const requiredEnvVars = ['LINE_CHANNEL_SECRET', 'LINE_CHANNEL_ACCESS_TOKEN', 'ANTHROPIC_API_KEY'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error('❌ Missing required environment variables:');
+  missingEnvVars.forEach(varName => console.error(`   - ${varName}`));
+  console.error('\nPlease set these variables in Railway Dashboard → Variables');
+  process.exit(1);
+}
+
 // ==================== Configuration ====================
 const lineConfig = {
   channelSecret: process.env.LINE_CHANNEL_SECRET,
@@ -17,7 +28,9 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-const client = new line.Client(lineConfig);
+const client = new line.messagingApi.MessagingApiClient({
+  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+});
 
 const CLAUDE_CONFIG = {
   model: 'claude-sonnet-4-20250514',
